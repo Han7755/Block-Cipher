@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <string>
 using namespace std;
 
@@ -7,6 +8,7 @@ typedef unsigned int Block;
 typedef unsigned short Unit;
 typedef unsigned char Split;
 
+// F함수
 Unit F_func(Unit ki, Unit ri)
 {
     // ki, ri 비트 분할
@@ -28,6 +30,7 @@ Unit F_func(Unit ki, Unit ri)
     return result;
 }
 
+// 키 생성을 위한 rotate 연산기
 Block Key_rotate(Block key, int i = 1)
 {
     if (i < 0 || i > 2)
@@ -37,7 +40,7 @@ Block Key_rotate(Block key, int i = 1)
     return key;
 }
 
-Block Encryption(Block key, Block plain, int Selection = 0)
+Block Cryption(Block key, Block plain, int Selection = 0)
 {
     // 비트 분할
     Unit R1 = plain & 0xFFFF;
@@ -99,7 +102,82 @@ Block Encryption(Block key, Block plain, int Selection = 0)
     }
 }
 
+// 파일을 읽어 문자 벡터에 저장하는 함수
+void LoadString(vector<Split> &Arr)
+{
+    ifstream File;
+    char ch;
+    File.open("test.txt");
+    // 파일의 문자열을 한 글자씩 벡터에 저장함(나중에 블록 단위 분할 위함)
+    if (File.is_open())
+    {
+        while (!File.eof())
+        {
+            File.get(ch);
+            Arr.push_back(ch);
+        }
+        File.close();
+    }
+    // 예외처리
+    else
+        cout << "Error";
+}
+
+// 문자열 패딩 함수
+void padding(vector<Split> &Arr)
+{
+    int pad = Arr.size() % 4;
+    int n = 4 - pad;
+
+    // 문자열의 끝에 패딩 수와 같은 숫자로 패딩
+    for (int i = 0; i < n; i++)
+        Arr.push_back(n + 48);
+}
+
+// 읽어온 문자열을 블록 단위로 분할하는 함수
+void StoB(vector<Split> &Arr, vector<Block> &block)
+{
+    block.clear();
+    for (int i = 0; i < Arr.size(); i += 4)
+    {
+        // 8비트인 unsigned char를 4개 합쳐 32비트인 unsigned int로 변환
+        Block input = (Arr[i] << 24) | (Arr[i + 1] << 16) | (Arr[i + 2] << 8) | Arr[i + 3];
+        block.push_back(input);
+    }
+}
+
+// 블록 단위의 비트를 다시 문자열로 변환하는 함수
+void BtoS(vector<Block> &block, vector<Split> &Arr)
+{
+    Arr.clear();
+    for (int i = 0; i < block.size(); i++)
+        for (int j = 0; j < 4; j += 4)
+        {
+            Split input1 = block[i] >> 24;
+            Split input2 = (block[i] >> 16) & 0xFF;
+            Split input3 = (block[i] >> 8) & 0xFF;
+            Split input4 = (block[i] & 0xFF);
+            Arr.push_back(input1);
+            Arr.push_back(input2);
+            Arr.push_back(input3);
+            Arr.push_back(input4);
+        }
+}
+
 int main()
 {
     // todo파일 입출력 AND ECB 구현
+    vector<Split> Arr;
+    vector<Block> block;
+    LoadString(Arr);
+    for (int i = 0; i < Arr.size(); i++)
+        cout << Arr[i];
+    cout << Arr.size() << endl;
+    padding(Arr);
+    cout << Arr.size() << endl;
+    cout << Arr[403]
+         << endl;
+    StoB(Arr, block);
+    for (int i = 0; i < block.size(); i++)
+        cout << block[i] << endl;
 }
