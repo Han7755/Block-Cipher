@@ -8,107 +8,46 @@ typedef unsigned int Block;
 typedef unsigned short Unit;
 typedef unsigned char Split;
 
-// FÇÔ¼ö
+// Fí•¨ìˆ˜
 Unit F_func(Unit ki, Unit ri)
 {
-    // ki, ri ºñÆ® ºĞÇÒ
+    // ki, ri ë¹„íŠ¸ ë¶„í• 
     Split ki_1 = ki & 0xFF;
     Split ki_2 = ki >> 8;
     Split ri_1 = ri & 0xFF;
     Split ri_2 = ri >> 8;
 
-    // XOR °á°ú
+    // XOR ê²°ê³¼
     Split xor_result1 = ki_1 ^ ri_1;
     Split xor_result2 = ki_1 ^ ri_2;
 
-    // ÇÕ °á°ú
+    // í•© ê²°ê³¼
     Split or_result1 = (xor_result1 + ki_2) % 256;
     Split or_result2 = (xor_result2 + ki_2) % 256;
 
-    // ÃÖÁ¾ °á°ú ÇÕÄ§
+    // ìµœì¢… ê²°ê³¼ í•©ì¹¨
     Unit result = (or_result2 << 8) | or_result1;
     return result;
 }
 
-// Å° »ı¼ºÀ» À§ÇÑ rotate ¿¬»ê±â
+// í‚¤ ìƒì„±ì„ ìœ„í•œ rotate ì—°ì‚°ê¸°
 Block Key_rotate(Block key, int i = 1)
 {
     if (i < 0 || i > 2)
         return 0;
-    // ÁÂÃøÀ¸·Î 8ºñÆ® È¸Àü
+    // ì¢Œì¸¡ìœ¼ë¡œ 8ë¹„íŠ¸ íšŒì „
     key = (key << 8 * i) | (key >> (32 - (8 * i)));
     return key;
 }
 
-Block Cryption(Block key, Block plain, int Selection = 0)
+// íŒŒì¼ì„ ì½ì–´ ë¬¸ì ë²¡í„°ì— ì €ì¥í•˜ëŠ” í•¨ìˆ˜
+void LoadString(vector<Split> &Arr, string Filename)
 {
-    // ºñÆ® ºĞÇÒ
-    Unit R1 = plain & 0xFFFF;
-    Unit L1 = plain >> 16;
-    Block key_whole[2] = {Key_rotate(key), Key_rotate(key, 2)};
-
-    // k1, k2, k3, k4 ÀúÀå
-    Unit k1 = key_whole[0] >> 16;
-    Unit k2 = key_whole[0] & 0xFFFF;
-    Unit k3 = key_whole[1] >> 16;
-    Unit k4 = key_whole[1] & 0xFFFF;
-
-    // ¾ÏÈ£ µ¿ÀÛ
-    if (Selection == 0)
-    {
-        // ¶ó¿îµå 1
-        Unit R2 = L1 ^ F_func(k1, R1);
-        Unit L2 = R1;
-
-        // ¶ó¿îµå 2
-        Unit R3 = L2 ^ F_func(k2, R2);
-        Unit L3 = R2;
-
-        // ¶ó¿îµå 3
-        Unit R4 = L3 ^ F_func(k3, R3);
-        Unit L4 = R3;
-
-        // ¶ó¿îµå 4 : ¹Ù²ÙÁö ¾ÊÀ½
-        Unit L5 = L4 ^ F_func(k4, R4);
-        Unit R5 = R4;
-
-        // °á°ú ÇÕÄ§
-        Block result = (L5 << 16) | R5;
-        return result;
-    }
-
-    // º¹È£ µ¿ÀÛ
-    else
-    {
-        // ¶ó¿îµå 1
-        Unit R2 = L1 ^ F_func(k4, R1);
-        Unit L2 = R1;
-        // ¶ó¿îµå 2
-
-        Unit R3 = L2 ^ F_func(k3, R2);
-        Unit L3 = R2;
-        // ¶ó¿îµå 3
-
-        Unit R4 = L3 ^ F_func(k2, R3);
-        Unit L4 = R3;
-        // ¶ó¿îµå 4 : ¹Ù²ÙÁö ¾ÊÀ½
-
-        Unit L5 = L4 ^ F_func(k1, R4);
-        Unit R5 = R4;
-        // °á°ú ÇÕÄ§
-
-        Block result = (L5 << 16) | R5;
-        return result;
-    }
-}
-
-// ÆÄÀÏÀ» ÀĞ¾î ¹®ÀÚ º¤ÅÍ¿¡ ÀúÀåÇÏ´Â ÇÔ¼ö
-void LoadString(vector<Split> &Arr)
-{
+    Arr.clear();
     ifstream File;
     char ch;
-    File.open("test.txt");
-    // ÆÄÀÏÀÇ ¹®ÀÚ¿­À» ÇÑ ±ÛÀÚ¾¿ º¤ÅÍ¿¡ ÀúÀåÇÔ(³ªÁß¿¡ ºí·Ï ´ÜÀ§ ºĞÇÒ À§ÇÔ)
+    File.open(Filename);
+    // íŒŒì¼ì˜ ë¬¸ìì—´ì„ í•œ ê¸€ìì”© ë²¡í„°ì— ì €ì¥í•¨(ë‚˜ì¤‘ì— ë¸”ë¡ ë‹¨ìœ„ ë¶„í•  ìœ„í•¨)
     if (File.is_open())
     {
         while (!File.eof())
@@ -116,37 +55,75 @@ void LoadString(vector<Split> &Arr)
             File.get(ch);
             Arr.push_back(ch);
         }
+        Arr.pop_back();
         File.close();
     }
-    // ¿¹¿ÜÃ³¸®
+    // ì˜ˆì™¸ì²˜ë¦¬
     else
         cout << "Error";
 }
 
-// ¹®ÀÚ¿­ ÆĞµù ÇÔ¼ö
+// í‚¤ ì…ë ¥ í•¨ìˆ˜
+void LoadKey(string filename, Block &result)
+{
+    ifstream keyFile;
+    string line;
+    char ch;
+    keyFile.open(filename);
+    if (keyFile.is_open())
+    {
+        getline(keyFile, line);
+        keyFile.close();
+        result = stoi(line, nullptr, 16);
+    }
+    // ì˜ˆì™¸ì²˜ë¦¬
+    else
+        cout << "Error";
+}
+
+// ë¬¸ìì—´ íŒ¨ë”© í•¨ìˆ˜
 void padding(vector<Split> &Arr)
 {
     int pad = Arr.size() % 4;
     int n = 4 - pad;
 
-    // ¹®ÀÚ¿­ÀÇ ³¡¿¡ ÆĞµù ¼ö¿Í °°Àº ¼ıÀÚ·Î ÆĞµù
+    // ë¬¸ìì—´ì˜ ëì— íŒ¨ë”© ìˆ˜ì™€ ê°™ì€ ìˆ«ìë¡œ íŒ¨ë”©
     for (int i = 0; i < n; i++)
         Arr.push_back(n + 48);
 }
 
-// ÀĞ¾î¿Â ¹®ÀÚ¿­À» ºí·Ï ´ÜÀ§·Î ºĞÇÒÇÏ´Â ÇÔ¼ö
+// íŒ¨ë”© ì œê±° í•¨ìˆ˜
+void Del_padding(vector<Split> &Arr)
+{
+    int pad;
+    if (Arr.size() % 4 != 0)
+        while (Arr.size() % 4 != 0)
+        {
+            Arr.pop_back();
+            cout << 1 << endl;
+        }
+    else
+        for (int i = 0; i < 4; i++)
+            Arr.pop_back();
+
+    pad = Arr.back() - 48;
+    for (int i = 0; i < pad; i++)
+        Arr.pop_back();
+}
+
+// ì½ì–´ì˜¨ ë¬¸ìì—´ì„ ë¸”ë¡ ë‹¨ìœ„ë¡œ ë¶„í• í•˜ëŠ” í•¨ìˆ˜
 void StoB(vector<Split> &Arr, vector<Block> &block)
 {
     block.clear();
     for (int i = 0; i < Arr.size(); i += 4)
     {
-        // 8ºñÆ®ÀÎ unsigned char¸¦ 4°³ ÇÕÃÄ 32ºñÆ®ÀÎ unsigned int·Î º¯È¯
+        // 8ë¹„íŠ¸ì¸ unsigned charë¥¼ 4ê°œ í•©ì³ 32ë¹„íŠ¸ì¸ unsigned intë¡œ ë³€í™˜
         Block input = (Arr[i] << 24) | (Arr[i + 1] << 16) | (Arr[i + 2] << 8) | Arr[i + 3];
         block.push_back(input);
     }
 }
 
-// ºí·Ï ´ÜÀ§ÀÇ ºñÆ®¸¦ ´Ù½Ã ¹®ÀÚ¿­·Î º¯È¯ÇÏ´Â ÇÔ¼ö
+// ë¸”ë¡ ë‹¨ìœ„ì˜ ë¹„íŠ¸ë¥¼ ë‹¤ì‹œ ë¬¸ìì—´ë¡œ ë³€í™˜í•˜ëŠ” í•¨ìˆ˜
 void BtoS(vector<Block> &block, vector<Split> &Arr)
 {
     Arr.clear();
@@ -164,20 +141,117 @@ void BtoS(vector<Block> &block, vector<Split> &Arr)
         }
 }
 
+// ì•”í˜¸/ë³µí˜¸ í•¨ìˆ˜
+vector<Split> Cryption(Block key, vector<Split> Arr, int Selection = 0)
+{
+    vector<Block> block;
+    vector<Block> result;
+    padding(Arr);
+    StoB(Arr, block);
+    // round key ìƒì„±
+    Block key_whole[2] = {Key_rotate(key), Key_rotate(key, 2)};
+    // k1, k2, k3, k4 ì €ì¥
+    Unit k1 = key_whole[0] >> 16;
+    Unit k2 = key_whole[0] & 0xFFFF;
+    Unit k3 = key_whole[1] >> 16;
+    Unit k4 = key_whole[1] & 0xFFFF;
+
+    // ì•”í˜¸ ë™ì‘
+    if (Selection == 0)
+    {
+        for (int i = 0; i < block.size(); i++)
+        {
+            Unit R1 = block[i] & 0xFFFF;
+            Unit L1 = block[i] >> 16;
+            // ë¼ìš´ë“œ 1
+            Unit R2 = L1 ^ F_func(k1, R1);
+            Unit L2 = R1;
+
+            // ë¼ìš´ë“œ 2
+            Unit R3 = L2 ^ F_func(k2, R2);
+            Unit L3 = R2;
+
+            // ë¼ìš´ë“œ 3
+            Unit R4 = L3 ^ F_func(k3, R3);
+            Unit L4 = R3;
+
+            // ë¼ìš´ë“œ 4 : ë°”ê¾¸ì§€ ì•ŠìŒ
+            Unit L5 = L4 ^ F_func(k4, R4);
+            Unit R5 = R4;
+
+            // ê²°ê³¼ í•©ì¹¨
+            Block round_result = (L5 << 16) | R5;
+            result.push_back(round_result);
+        }
+        BtoS(result, Arr);
+        return Arr;
+    }
+
+    // ë³µí˜¸ ë™ì‘
+    else
+    {
+        for (int i = 0; i < block.size(); i++)
+        {
+            Unit R1 = block[i] & 0xFFFF;
+            Unit L1 = block[i] >> 16;
+            // ë¼ìš´ë“œ 1
+            Unit R2 = L1 ^ F_func(k4, R1);
+            Unit L2 = R1;
+            // ë¼ìš´ë“œ 2
+
+            Unit R3 = L2 ^ F_func(k3, R2);
+            Unit L3 = R2;
+            // ë¼ìš´ë“œ 3
+
+            Unit R4 = L3 ^ F_func(k2, R3);
+            Unit L4 = R3;
+            // ë¼ìš´ë“œ 4 : ë°”ê¾¸ì§€ ì•ŠìŒ
+
+            Unit L5 = L4 ^ F_func(k1, R4);
+            Unit R5 = R4;
+            // ê²°ê³¼ í•©ì¹¨
+
+            Block round_result = (L5 << 16) | R5;
+
+            result.push_back(round_result);
+        }
+        BtoS(result, Arr);
+        Del_padding(Arr);
+        cout << "ì‹¤í–‰";
+        return Arr;
+    }
+}
 int main()
 {
-    // todoÆÄÀÏ ÀÔÃâ·Â AND ECB ±¸Çö
+    // todoíŒŒì¼ ì…ì¶œë ¥ AND ECB êµ¬í˜„
     vector<Split> Arr;
     vector<Block> block;
-    LoadString(Arr);
-    for (int i = 0; i < Arr.size(); i++)
-        cout << Arr[i];
-    cout << Arr.size() << endl;
-    padding(Arr);
-    cout << Arr.size() << endl;
-    cout << Arr[403]
-         << endl;
-    StoB(Arr, block);
-    for (int i = 0; i < block.size(); i++)
-        cout << block[i] << endl;
+    vector<Split> result;
+    Block key;
+    int z;
+    LoadKey("key.txt", key);
+    cout << "Select En/Decrypt (0/1): ";
+    cin >> z;
+    if (z == 1)
+    {
+        ofstream plain("plain.txt");
+        LoadString(Arr, "cipher.txt");
+        result = Cryption(key, Arr, 1);
+        string PT(result.begin(), result.end());
+        plain << PT;
+        plain.close();
+        cout << "Done!" << endl;
+        system("pause");
+    }
+    else
+    {
+        ofstream cipher("cipher.txt");
+        LoadString(Arr, "test.txt");
+        result = Cryption(key, Arr, 0);
+        string CT(result.begin(), result.end());
+        cipher << CT;
+        cipher.close();
+        cout << "Done!" << endl;
+        system("pause");
+    }
 }
